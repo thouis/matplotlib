@@ -56,14 +56,7 @@ basedir = {
     'linux2' : ['/usr/local', '/usr'],
     'linux'  : ['/usr/local', '/usr',],
     'cygwin' : ['/usr/local', '/usr',],
-    '_darwin' : ['/sw/lib/freetype2', '/sw/lib/freetype219', '/usr/local',
-                '/usr', '/sw'],
-    # it appears builds with darwin are broken because of all the
-    # different flags the deps can be compile with, so I am pushing
-    # people to :
-    #   make -f make.osx fetch deps mpl_build mpl_install
-
-    'darwin' : [],
+    'darwin' : ['/Developer/SDKs/MacOSX10.5.sdk/usr/X11R6', '/usr'],
 
     'freebsd4' : ['/usr/local', '/usr'],
     'freebsd5' : ['/usr/local', '/usr'],
@@ -317,12 +310,7 @@ def find_include_file(include_dirs, filename):
 def check_for_freetype():
     module = Extension('test', [])
     add_base_flags(module)
-    if not get_pkgconfig(module, 'freetype2'):
-        basedirs = module.include_dirs[:]  # copy the list to avoid inf loop!
-        for d in basedirs:
-            module.include_dirs.append(os.path.join(d, 'freetype2'))
-
-    print_status("freetype2", get_pkgconfig_version('freetype2'))
+    print_status("freetype2", "Forced 10.5sdk")
     if not find_include_file(module.include_dirs, 'ft2build.h'):
         print_message(
             "WARNING: Could not find 'freetype2' headers in any of %s." %
@@ -332,10 +320,8 @@ def check_for_freetype():
 
 def check_for_libpng():
     module = Extension("test", [])
-    get_pkgconfig(module, 'libpng')
     add_base_flags(module)
-
-    print_status("libpng", get_pkgconfig_version('libpng'))
+    print_status("libpng", "Forced 10.5sdk")
     if not find_include_file(module.include_dirs, 'png.h'):
         print_message(
             "Could not find 'libpng' headers in any of %s" %
@@ -538,9 +524,9 @@ def add_numpy_flags(module):
     module.include_dirs.append(numpy.get_include())
 
 def add_png_flags(module):
-    try_pkgconfig(module, 'libpng', 'png')
     add_base_flags(module)
     add_numpy_flags(module)
+    module.libraries.append('png12')
     module.libraries.append('z')
     module.include_dirs.extend(['.'])
     module.libraries.extend(std_libs)
@@ -557,27 +543,11 @@ def add_agg_flags(module):
     module.libraries.extend(std_libs)
 
 def add_ft2font_flags(module):
-    'Add the module flags to ft2font extension'
+    add_base_flags(module)
     add_numpy_flags(module)
-    if not get_pkgconfig(module, 'freetype2'):
-        module.libraries.extend(['freetype', 'z'])
-        add_base_flags(module)
-
-        basedirs = module.include_dirs[:]  # copy the list to avoid inf loop!
-        for d in basedirs:
-            module.include_dirs.append(os.path.join(d, 'freetype2'))
-            p = os.path.join(d, 'lib/freetype2/include')
-            if os.path.exists(p): module.include_dirs.append(p)
-            p = os.path.join(d, 'lib/freetype2/include/freetype2')
-            if os.path.exists(p): module.include_dirs.append(p)
-
-        basedirs = module.library_dirs[:]  # copy the list to avoid inf loop!
-        for d in basedirs:
-            p = os.path.join(d, 'freetype2/lib')
-            if os.path.exists(p): module.library_dirs.append(p)
-    else:
-        add_base_flags(module)
-        module.libraries.append('z')
+    module.include_dirs.extend(['/Developer/SDKs/MacOSX10.5.sdk/usr/X11R6/include/freetype2'])
+    module.libraries.append('freetype')
+    module.libraries.append('z')
 
     # put this last for library link order
     module.libraries.extend(std_libs)
